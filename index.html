@@ -270,6 +270,7 @@
         <tr><td><code>QUERY_ALL_PACKAGES</code></td><td>To scan all installed apps for malware indicators</td></tr>
         <tr><td><code>INTERNET</code></td><td>To fetch publicly available threat intelligence feeds (no user data sent)</td></tr>
         <tr><td><code>FOREGROUND_SERVICE</code></td><td>To run the DNS monitoring VPN service in the background</td></tr>
+        <tr><td><code>FOREGROUND_SERVICE_SPECIAL_USE</code></td><td>Required on Android 14+ for VPN-type foreground services</td></tr>
         <tr><td><code>ACCESS_NETWORK_STATE</code></td><td>To check network connectivity before fetching IOC feed updates</td></tr>
         <tr><td><code>READ_LOGS</code></td><td>To capture AndroDR's own process log for user-initiated security reports</td></tr>
         <tr><td><code>PACKAGE_USAGE_STATS</code></td><td>To query app foreground/background events for the forensic timeline (optional, requires manual grant)</td></tr>
@@ -289,7 +290,8 @@
         <tr><td>Threat domains</td><td>ThreatFox (abuse.ch)</td><td>Malware C2 domain indicators</td></tr>
         <tr><td>DNS blocklist</td><td>HaGeZi TIF (GitHub)</td><td>Threat intelligence domain blocklist</td></tr>
         <tr><td>Malware APK hashes</td><td>MalwareBazaar (abuse.ch)</td><td>Recent Android malware file hashes</td></tr>
-        <tr><td>Malware cert hashes</td><td>MalwareBazaar (abuse.ch)</td><td>Known malicious signing certificates</td></tr>
+        <tr><td>Malware cert hashes</td><td>Bundled database</td><td>Known malicious signing certificates (bundled; remote feed planned)</td></tr>
+        <tr><td>Mobile malware IOCs</td><td>Zimperium zIPS (GitHub)</td><td>Banking trojan and RAT C2 domains</td></tr>
         <tr><td>CVE database</td><td>CISA KEV + OSV (Google)</td><td>Known exploited Android vulnerabilities</td></tr>
         <tr><td>Known app database</td><td>UAD / Plexus (GitHub)</td><td>Legitimate app lists for false positive reduction</td></tr>
         <tr><td>OEM prefix list</td><td>android-sigma-rules (GitHub)</td><td>Manufacturer app package prefixes</td></tr>
@@ -300,7 +302,7 @@
     <p>All requests are unauthenticated public HTTP GET requests. No API keys, no cookies, no tracking headers.</p>
 
     <h3>DNS Monitoring</h3>
-    <p>AndroDR's DNS monitor uses a local VPN to intercept DNS queries <strong>on your device only</strong>. DNS queries are resolved locally — no traffic is routed to external servers. The VPN does not route, inspect, or modify your web traffic. You can enable or disable DNS monitoring at any time.</p>
+    <p>AndroDR's DNS monitor uses a local VPN to intercept and inspect DNS queries on your device. Queries are checked against threat intelligence domain databases, then forwarded to an upstream DNS resolver (Google Public DNS, 8.8.8.8) for resolution. The VPN does not route, inspect, or modify your web traffic — only DNS query domain names are examined. No user data is added to DNS queries. You can enable or disable DNS monitoring at any time.</p>
 
     <h3>Bug Report Analysis</h3>
     <p>AndroDR can analyze Android bug report files (<code>.zip</code>) that you manually provide. Everything is processed <strong>entirely on-device</strong> — no part of the bug report is transmitted anywhere.</p>
