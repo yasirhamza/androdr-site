@@ -1,0 +1,70 @@
+name: Render privacy from AndroDR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/render-privacy.yml'
+      - 'index.html'
+  repository_dispatch:
+    types: [privacy-updated]
+  schedule:
+    # Daily safety net at 05:17 UTC in case a dispatch was missed.
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-privacy
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout androdr-site
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fetch renderer + markdown from AndroDR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/androdr
+          for path in docs/PRIVACY_POLICY.md scripts/render_privacy.py scripts/requirements.txt; do
+            out="/tmp/androdr/$(basename "$path")"
+            gh api "repos/yasirhamza/AndroDR/contents/$path" --jq '.content' | base64 -d > "$out"
+            test -s "$out" || { echo "fetch failed: $path"; exit 1; }
+          done
+
+      - name: Capture source SHA for commit message
+        id: src
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA=$(gh api repos/yasirhamza/AndroDR/commits/main --jq '.sha' | cut -c1-7)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Install renderer dependencies
+        run: python -m pip install -r /tmp/androdr/requirements.txt
+
+      - name: Render privacy into index.html
+        run: python3 /tmp/androdr/render_privacy.py /tmp/androdr/PRIVACY_POLICY.md index.html
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "no change — privacy content already in sync"
+            exit 0
+          fi
+          git config user.name 'androdr-site-bot'
+          git config user.email 'yhamad.dev@gmail.com'
+          git add index.html
+          git commit -m "docs(privacy): sync from AndroDR@${{ steps.src.outputs.sha }}"
+          git push
